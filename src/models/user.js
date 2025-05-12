@@ -1,5 +1,7 @@
 const mongoose = require("mongoose");
 const validator = require("validator");
+const jwt = require("jsonwebtoken");
+const bcrypt = require("bcrypt");
 
 const userSchema = new mongoose.Schema(
   {
@@ -18,23 +20,11 @@ const userSchema = new mongoose.Schema(
       unique: true,
       lowercase: true,
       trim: true
-      // validate(value) {
-      //   if(!validator.isEmail(value)) {
-      //     throw new Error ("Invalid email" + value);
-      //  
-      // }
     },
-   
-     password: {
+    password: {
       type: String,
       required: true,
       unique: true
-    //   validate(value){
-    //   if(!validate.isStrongPassword(value)) {
-    //     throw new Error("Enter Strong Password" + value);
-    //   }
-    // }
-
     },
     gender: {
       type: String,
@@ -55,14 +45,8 @@ const userSchema = new mongoose.Schema(
       type: String,
       trim: true,
       default:
-        "https://thumbs.dreamstime.com/z/code-javascript-language-white-background-developing-programming-binar-gibberish-dummy-lorem-ipsum-text-screen-web-dark-291324452.jpg",
-        // validate(value){
-        //   if(!validate.isURL(value)) {
-        //     throw new Error("Invalid Photo url" + value);
-        //   }
-        // },
+        "https://thumbs.dreamstime.com/z/code-javascript-language-white-background-developing-programming-binar-gibberish-dummy-lorem-ipsum-text-screen-web-dark-291324452.jpg"
     },
-
     skills: {
       type: [String],
       default: "This is the default value"
@@ -77,4 +61,23 @@ const userSchema = new mongoose.Schema(
   }
 );
 
+// ✅ Attach methods BEFORE exporting model
+userSchema.methods.getJWT = async function () {
+  const user = this;
+  const token = await jwt.sign(
+    { _id: user._id },
+    'Match@Made!@12',
+    { expiresIn: "7d" }
+  );
+  return token;
+};
+
+userSchema.methods.validatePassword = async function (passwordInputByUser) {
+  const user = this;
+  const passwordHash = user.password;
+  const isPasswordValid = await bcrypt.compare(passwordInputByUser, passwordHash);
+  return isPasswordValid;
+};
+
+// ✅ Export model AFTER methods are defined
 module.exports = mongoose.model("User", userSchema);
